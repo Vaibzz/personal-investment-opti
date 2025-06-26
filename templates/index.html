@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Family Investment Optimizer</title>
+  <style>
+    body { font-family: Arial; background: #f2f2f2; margin:0; padding:20px; }
+    .container { max-width:800px; margin:auto; background:white; padding:20px; border-radius:8px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
+    label, input, textarea, button { display:block; width:100%; margin-top:10px; }
+    input, textarea { padding:8px; border:1px solid #ccc; border-radius:4px; }
+    button { padding:10px;background:#007BFF;color:#fff;border:none;border-radius:4px;cursor:pointer; }
+    button:hover { background:#0056b3; }
+    .result { margin-top:20px; padding:15px; background:#e9ffe9; border:1px solid #b2ffb2; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Family Investment Optimizer</h1>
+    <form id="uploadForm">
+      <label>Upload CAMS Statement (CSV)</label>
+      <input type="file" id="camsStatement" accept=".csv" required />
+      <label>Recurring Investments (JSON)</label>
+      <textarea id="recurringInvestments" placeholder='{"EPF":5000,"NPS":2000}'></textarea>
+      <label>Liquid Cash Available</label>
+      <input type="number" id="liquidCash" placeholder="e.g., 100000" />
+      <button type="submit">Optimize Portfolio</button>
+    </form>
+    <div class="result" id="result"></div>
+  </div>
+  <script>
+    document.getElementById("uploadForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const form = new FormData();
+      form.append("file", document.getElementById("camsStatement").files[0]);
+      const up = await fetch("/upload", { method: "POST", body: form });
+      const { parsed_data } = await up.json();
+      const rec = JSON.parse(document.getElementById("recurringInvestments").value || "{}");
+      const lc = parseFloat(document.getElementById("liquidCash").value || 0);
+      const opt = await fetch("/optimize", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({ mutual_funds: parsed_data, recurring_investments: rec, liquid_cash: lc })
+      });
+      const data = await opt.json();
+      document.getElementById("result").innerHTML = `<h3>Results</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+    });
+  </script>
+</body>
+</html>
